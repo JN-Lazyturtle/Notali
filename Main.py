@@ -1,7 +1,7 @@
 import pygame
 import Accueil
 from Notali import Notali
-import Acquéreur_note
+from Acquereur_note import AcquereurNote
 import Metronome
 
 pygame.init()
@@ -12,21 +12,24 @@ pygame_icon = pygame.image.load('img/icone.png')
 pygame.display.set_icon(pygame_icon)
 screen = pygame.display.set_mode(size, pygame.RESIZABLE)
 
-# creation style du texte
-police = pygame.font.SysFont('Comic Sans MS', 20)
-
-notali = Notali(screen, police)
-ports = Accueil.initialiser_ports_midi()
-Acquéreur_note.lancer_processus(ports[0], ports[1])
+notali = Notali(screen)
+acquereur_note = AcquereurNote(notali)
 Metronome.lancer([120])
 
-action = ['accueil']
+action = ['Accueil']
+
 while len(action) > 0 and action[0] != 'quitter':
-    if action[0] == 'accueil':
-        action = Accueil.afficher(screen, width, height, police)
+
+    if action[0] == 'Accueil':
+        action = Accueil.afficher(screen, width, height)
 
     if action[0] == 'Notali':
-        action = notali.afficher()
-        Metronome.mute()
+        if action[1] != "init" and action[2] != "init":
+            acquereur_note.set_midi_in(action[1])
+            acquereur_note.set_midi_out(action[2])
+            acquereur_note.lancer_processus()
+            action = notali.afficher()
+        else:
+            action = ['Accueil']
 
 pygame.quit()

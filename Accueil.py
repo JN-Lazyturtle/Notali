@@ -1,5 +1,6 @@
 import pygame
 import mido
+from Bouton import Bouton
 
 port_in = 'init'
 port_out = 'init'
@@ -8,12 +9,14 @@ port_out = 'init'
 # la fonction renvoi la liste des ports ainsi que la liste des rects sur lesquels on peut cliquer
 # (qui corresponds au texte des ports affichés)
 def afficher_ports(screen, height):
-    hauteur_in = 10
+    hauteur_in = 90
     hauteur_out = height / 2 + 10
     # creation textes
-    police = pygame.font.SysFont('Comic Sans MS', 20)
+    police = pygame.font.Font('police/Garet-Book.ttf', 20)
+    texte_choix_ports = police.render("Veuillez choisir les ports :)", True, (0, 0, 0))
     texte_ports_midi_in = police.render("ports midi IN : ", True, (0, 0, 0))
     texte_ports_midi_out = police.render("ports midi out : ", True, (0, 0, 0))
+    screen.blit(texte_choix_ports, (10, 10))
     screen.blit(texte_ports_midi_in, (10, hauteur_in - 5))
     screen.blit(texte_ports_midi_out, (10, hauteur_out - 5))
     ports_in = mido.get_input_names()
@@ -21,26 +24,35 @@ def afficher_ports(screen, height):
     rect_in = []
     rect_out = []
 
-    decal = 25
+    valeur_decal = 30
+    somme_decal = 40
     for port in ports_in:
-        texte = police.render(port, True, (0, 0, 0))
+        if port == port_in:  # si c'est le port utilisé on change sa couleur
+            texte = police.render(port, True, (10, 130, 100))
+        else:
+            texte = police.render(port, True, (0, 0, 0))
         rect = texte.get_rect()
         rect.x = 10
-        rect.y = hauteur_in + decal
+        rect.y = hauteur_in + somme_decal
         screen.blit(texte, rect)
+        rect.y = rect.y + valeur_decal
         rect_in.append(rect)
-        decal += 25
+        somme_decal += valeur_decal
 
-    decal = 25
-
+    somme_decal = 40
+    valeur_decal = 30
     for port in ports_out:
-        texte = police.render(port, True, (0, 0, 0))
+        if port == port_out:  # si c'est le port utilisé on change sa couleur
+            texte = police.render(port, True, (100, 130, 100))
+        else:
+            texte = police.render(port, True, (0, 0, 0))
         rect = texte.get_rect()
         rect.x = 10
-        rect.y = hauteur_out + decal
+        rect.y = hauteur_out + somme_decal
         screen.blit(texte, rect)
+        rect.y = rect.y + valeur_decal
         rect_out.append(rect)
-        decal += 25
+        somme_decal += valeur_decal
 
     return ports_in, rect_in, ports_out, rect_out
 
@@ -51,71 +63,92 @@ def initialiser_ports_midi():
     ports_out = mido.get_output_names()
     if len(ports_in) != 0:
         port_in = ports_in[0]
+    else:
+        port_in = "init"
     if len(ports_out) != 0:
         port_out = ports_out[0]
+    else:
+        port_out = "init"
 
     return [port_in, port_out]
 
 
-def afficher(screen, width, height, police):
+def afficher(screen, width, height):
     global port_in, port_out
     ports = initialiser_ports_midi()
     port_in = ports[0]
     port_out = ports[1]
 
+    # Ajout fond d'écran/ load : charger une image a un chemin spécifique
+    background = pygame.image.load("img/background.jpg")
+
     # import bouton pour lancer la partie
-    play_button = pygame.image.load("img/bouton_demarrer.png")
-    play_button = pygame.transform.scale(play_button, (400, 100))
-    play_button_rect = play_button.get_rect()
-    play_button_rect.x = 600
-    play_button_rect.y = 450
-    # bouton settings
-    bouton_settings = pygame.image.load("img/bouton.png")
-    bouton_settings = pygame.transform.scale(bouton_settings, (250, 50))
-    bouton_settings_rect = bouton_settings.get_rect()
-    bouton_settings_rect.x = 675
-    bouton_settings_rect.y = 600
+    play_button = Bouton(430, 220, "img/start.png", "img/startClique.png")
+    play_button.redimensionner(250, 100)
+
+
+    # import bouton réglage port
+    button_set = Bouton(430, 300, "img/start.png", "img/startClique.png")
+    button_set.redimensionner(250, 100)
+
     # volet settings
     volet_ports_midi = pygame.image.load("img/bouton.png")
-    volet_ports_midi = pygame.transform.scale(volet_ports_midi, (width/2.7, height))
+    volet_ports_midi = pygame.transform.scale(volet_ports_midi, (width / 2.7, height / 1.1))
     volet_ports_midi_rect = volet_ports_midi.get_rect()
-    volet_ports_midi_rect.x = 0
-    volet_ports_midi_rect.y = 0
-    # alert 0 ports in
-    volet_alert = pygame.image.load("img/bouton.png")
-    volet_alert = pygame.transform.scale(volet_alert, (width / 2, height/10))
-    volet_alert_rect = volet_alert.get_rect()
-    volet_alert_rect.x = width/3
-    volet_alert_rect.y = 0
+    volet_ports_midi_rect.x = 20
+    volet_ports_midi_rect.y = 30
 
+    # alerte quand aucun port n'est disponible
+    boite_alert_0_ports = pygame.image.load("img/bouton.png")
+    boite_alert_0_ports = pygame.transform.scale(volet_ports_midi, (width / 2, height / 10))
+    boite_alert_0_ports_rect = boite_alert_0_ports.get_rect()
+    boite_alert_0_ports_rect.x = width/4
+    boite_alert_0_ports_rect.y = button_set.get_rect().y + button_set.get_rect().height + 10
+    police_texte = pygame.font.Font('police/Garet-Book.ttf', 17)
+    texte_alert_0_ports = police_texte.render("Attention, aucun port midi in/out disponible !", 1, '#8f4231')
+    texte_alert_0_ports_in = police_texte.render("Attention, aucun port midi in disponible !", 1, '#8f4231')
+    texte_alert_port_in_out_pareil = police_texte.render("Attention, même port midi in et out !", 1, '#8f4231')
+    texte_alert_0_ports_out = police_texte.render("Attention, aucun port midi out disponible !", 1, '#8f4231')
 
-    # Ajout fond d'écran/ load : charger une image a un chemin spécifique
-    background = pygame.image.load("img/fond_accueil.jpg")
-
-    texte_ports_midi = police.render("choisir les ports midi", True, (0, 0, 0))
-    texte_alert = police.render("attention vous n'avez pas de port midi-in !", True, (0, 0, 0))
-    texte_alert2 = police.render("cela ne pourra pas marcher", True, (0, 0, 0))
+    # maintenir eveiller et reste eveiller
+    running = True
 
     volet_ports_midi_ouvert = False
-    running = True
-    un = True
+    police = pygame.font.Font('police/Academy.ttf', 32)
+
+    # Boucle pour maintenir la fenêtre ouverte
     while running:
-
+        # appliquer arriere plan jeu
         # screen.blit : ajouter une image à un endroit spécifique de la fenêtre (largeur, hauteur)
-        screen.blit(background, (0, -20))
+        screen.blit(background, (0, 0))
 
+        # gestion du volet settings
         if volet_ports_midi_ouvert:
             screen.blit(volet_ports_midi, volet_ports_midi_rect)
 
-        if len(mido.get_input_names()) == 0:
-            screen.blit(volet_alert, volet_alert_rect)
-            volet_alert.blit(texte_alert, (75, 10))
-            volet_alert.blit(texte_alert2, (130, 35))
+        # affichage des erreurs de ports midi
+        if len(mido.get_input_names()) == 0 and len(mido.get_output_names()) == 0:
+            screen.blit(boite_alert_0_ports, boite_alert_0_ports_rect)
+            screen.blit(texte_alert_0_ports, (boite_alert_0_ports_rect.x+80, boite_alert_0_ports_rect.y + boite_alert_0_ports_rect.height/3))
+        elif len(mido.get_input_names()) == 0:
+            screen.blit(boite_alert_0_ports, boite_alert_0_ports_rect)
+            screen.blit(texte_alert_0_ports_in, (boite_alert_0_ports_rect.x+80, boite_alert_0_ports_rect.y + boite_alert_0_ports_rect.height/3))
+        elif len(mido.get_output_names()) == 0:
+            screen.blit(boite_alert_0_ports, boite_alert_0_ports_rect)
+            screen.blit(texte_alert_0_ports_out, (boite_alert_0_ports_rect.x + 80, boite_alert_0_ports_rect.y + boite_alert_0_ports_rect.height / 3))
+        elif port_in == port_out:
+            screen.blit(boite_alert_0_ports, boite_alert_0_ports_rect)
+            screen.blit(texte_alert_port_in_out_pareil, (boite_alert_0_ports_rect.x+80, boite_alert_0_ports_rect.y + boite_alert_0_ports_rect.height/3))
 
         # Appliquer image bouton
-        screen.blit(play_button, play_button_rect)
-        screen.blit(bouton_settings, bouton_settings_rect)
-        bouton_settings.blit(texte_ports_midi, (25, 10))
+        play_button.blit(screen)
+        button_set.blit(screen)
+
+        # Texte
+        texte1 = police.render("Commencer", 1, '#8f4231')
+        screen.blit(texte1, (460, 260))
+        texte2 = police.render("Reglages", 1, '#8f4231')
+        screen.blit(texte2, (475, 340))
 
         # mettre à jour la fenêtre
         pygame.display.flip()
@@ -126,16 +159,16 @@ def afficher(screen, width, height, police):
             if event.type == pygame.QUIT:
                 return ['quitter']
 
+            # quand l'apprenti appuie sur les boutons
+            if play_button.clique(event):
+                running = False
+                return ['Notali', port_in, port_out]
 
-            # le joueur appuie sur jouer
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if play_button_rect.collidepoint(event.pos):
-                    running = False
-                    return ['Notali', port_in, port_out]
+            if button_set.clique(event):
+                volet_ports_midi_ouvert = not volet_ports_midi_ouvert
+                afficher_ports(volet_ports_midi, height)  # pour forcer l'affichage dès l'appui du bouton
 
-                if bouton_settings_rect.collidepoint(event.pos):
-                    volet_ports_midi_ouvert = not volet_ports_midi_ouvert
-
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 # quand le volet des ports midi est activé, alors on capture les clique sur les noms des ports
                 if volet_ports_midi_ouvert:
                     liste_ports = afficher_ports(volet_ports_midi, height)
@@ -143,12 +176,16 @@ def afficher(screen, width, height, police):
                     for rect_port in liste_ports[1]:
                         if rect_port.collidepoint(event.pos):
                             port_in = liste_ports[0][i]
+                            afficher_ports(volet_ports_midi, height)
+                            # pour forcer le refreshing de la couleur du port quand on clique dessus
                         i += 1
 
                     i = 0
                     for rect_port in liste_ports[3]:
                         if rect_port.collidepoint(event.pos):
                             port_out = liste_ports[2][i]
+                            afficher_ports(volet_ports_midi, height)
+                            # pour forcer le refreshing de la couleur du port quand on clique dessus
                         i += 1
 
 
